@@ -7,7 +7,7 @@ export async function POST(req) {
   try {
     await connectDB();
 
-    const { email, password } = await req.json();
+    const { email, password, name } = await req.json();
 
     // 1️⃣ Basic validation
     if (!email || !password) {
@@ -41,6 +41,7 @@ export async function POST(req) {
     await User.create({
       email,
       password: hashedPassword,
+      name
     });
  
     return NextResponse.json(

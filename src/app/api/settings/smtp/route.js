@@ -8,6 +8,7 @@ export async function POST(req) {
 
     // ✅ Authenticate user
     const user = verifyApiAuth(req);
+    
 
     const body = await req.json();
     const { host, port, secure, username, password, fromEmail } = body;
@@ -52,10 +53,13 @@ export async function GET(req) {
     await connectDB();
 
     const user = verifyApiAuth(req);
+    console.log('user', user)
 
-    const data = await User.findOne({ _id: user?.userId });
+    const data = await User.findOne({ _id: user.userId });
 
-    return Response.json({ data: data?.smtp }, { status: 200 });
+    console.log('data', data)
+
+    return Response.json({ data: data }, { status: 200 });
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });
   }

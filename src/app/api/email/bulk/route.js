@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 import { verifyApiAuth } from "@/lib/auth";
 import BulkEmailTask from "@/models/BulkEmailTask";
 import EmailQueue from "@/models/EmailQueue";

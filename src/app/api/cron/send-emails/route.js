@@ -9,7 +9,7 @@ export async function GET() {
   await connectDB();
 
   const BATCH_SIZE = 20;
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 2;
 
   const emails = await EmailQueue.find({
     status: "PENDING",
@@ -36,7 +36,13 @@ export async function GET() {
         },
       });
 
-      await transporter.sendMail({
+      // await transporter.sendMail({
+      //   from: user.smtp.fromEmail,
+      //   to: job.to,
+      //   subject: job.subject,
+      //   html: job.body,
+      // });
+      console.log("first", {
         from: user.smtp.fromEmail,
         to: job.to,
         subject: job.subject,
@@ -59,7 +65,6 @@ export async function GET() {
         $inc: { sent: 1 },
         $set: { status: "PROCESSING", startedAt: new Date() },
       });
-
     } catch (err) {
       await EmailQueue.findByIdAndUpdate(job._id, {
         status: "FAILED",

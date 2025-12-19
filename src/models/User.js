@@ -2,10 +2,7 @@ import mongoose from "mongoose";
 
 const smtpSchema = new mongoose.Schema(
   {
-    host: {
-      type: String,
-      trim: true,
-    },
+    host: String,
     port: {
       type: Number,
       min: 1,
@@ -35,7 +32,7 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true,
+      unique: true, // ✅ single index source
       lowercase: true,
       trim: true,
     },
@@ -53,8 +50,6 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-userSchema.index({ email: 1 }, { unique: true });
 
 export default mongoose.models.User ||
   mongoose.model("User", userSchema);
