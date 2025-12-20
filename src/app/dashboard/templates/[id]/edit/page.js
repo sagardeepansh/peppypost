@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import TiptapEditor from "@/components/TiptapEditor";
+import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
 
 export default function EditTemplatePage() {
   const router = useRouter();
@@ -20,6 +22,9 @@ export default function EditTemplatePage() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+  const handleMessgae = (e) => {
+    setForm({ ...form, ['body']: e });
   };
 
   const handleSubmit = async (e) => {
@@ -53,13 +58,17 @@ export default function EditTemplatePage() {
           className="w-full bg-gray-900 border border-gray-800 rounded px-3 py-2"
         />
 
-        <textarea
+        {/* <textarea
           name="body"
           rows={6}
           value={form.body}
           onChange={handleChange}
           className="w-full bg-gray-900 border border-gray-800 rounded px-3 py-2"
-        />
+        /> */}
+        <div className="border border-gray-700 rounded-md overflow-hidden">
+          <SimpleEditor value={form.body} onChange={handleMessgae} />
+          {/* <TiptapEditor value={form.body} onChange={handleMessgae} /> */}
+        </div>
 
         <button className="bg-blue-600 px-4 py-2 rounded">
           Update Template

@@ -13,6 +13,8 @@ const emailQueueSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    
+    attachments: [{ type: String }],
 
     to: { type: String, required: true },
 

@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 import EmailQueue from "@/models/EmailQueue";
 import BulkEmailTask from "@/models/BulkEmailTask";
 import EmailLog from "@/models/EmailLog";
@@ -35,19 +35,28 @@ export async function GET() {
           pass: user.smtp.password,
         },
       });
+      const attachments = [];
 
-      // await transporter.sendMail({
-      //   from: user.smtp.fromEmail,
-      //   to: job.to,
-      //   subject: job.subject,
-      //   html: job.body,
-      // });
-      console.log("first", {
+      if (Array.isArray(job.attachments)) {
+        for (const filePath of job.attachments) {
+          const absolutePath = path.join(process.cwd(), "public", filePath);
+          if (fs.existsSync(absolutePath)) {
+            attachments.push({
+              filename: path.basename(filePath),
+              path: absolutePath,
+            });
+          }
+        }
+      }
+
+      await transporter.sendMail({
         from: user.smtp.fromEmail,
         to: job.to,
         subject: job.subject,
         html: job.body,
+        attachments,
       });
+     
 
       await EmailQueue.findByIdAndUpdate(job._id, {
         status: "SENT",
@@ -58,6 +67,7 @@ export async function GET() {
         to: [job.to],
         subject: job.subject,
         body: job.body,
+        attachments: job.attachments,
         status: "SENT",
       });
 
@@ -77,6 +87,7 @@ export async function GET() {
         to: [job.to],
         subject: job.subject,
         body: job.body,
+        attachments: job.attachments,
         status: "FAILED",
         error: err.message,
       });

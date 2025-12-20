@@ -1,8 +1,8 @@
 "use client";
 
-import LexicalEditor from "@/components/LexicalEditor";
-import TipTapEditor from "@/components/TipTapEditor";
+import TiptapEditor from "@/components/TiptapEditor";
 import { useEffect, useState } from "react";
+import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor'
 
 export default function DashboardPage() {
   const [emails, setEmails] = useState([]);
@@ -57,48 +57,71 @@ export default function DashboardPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // if (!email || !message) {
-    //     alert("Email and message are required");
-    //     return;
-    // }
-
     try {
       setLoading(true);
       setSuccess("");
 
-      // Simulated API call
       const result = await fetch("/api/email/bulk", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ emails, message, templateId: selectedTemplate }),
+        body: JSON.stringify({
+          emails,
+          message,
+          templateId: selectedTemplate,
+        }),
       });
+
+      // Always parse JSON AFTER checking response
+      const data = await result.json();
+
+      if (!result.ok) {
+        throw new Error(data?.message || "Email submission failed");
+      }
+
+      console.log("API response:", data);
 
       setSuccess("Message submitted successfully");
       setEmails([]);
       setMessage("");
+      setSelectedTemplate("");
     } catch (error) {
-      console.error(error);
-      alert("Something went wrong");
+      console.error("Submit error:", error);
+      alert(error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-950  p-4">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-lg shadow-lg p-6">
-        <h1 className="text-2xl font-semibold text-gray-100 mb-6 text-center"></h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Emails
+  return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+      <div className="w-full max-w-3xl bg-gray-900 border border-gray-800 rounded-xl shadow-xl">
+
+        {/* Header */}
+        <div className="px-6 flex justify-between items-center py-4 border-b border-gray-800">
+          <h1 className="text-lg font-semibold text-gray-100">Compose Email</h1>
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white
+                     hover:bg-blue-700 transition disabled:opacity-50"
+          >
+            {loading ? "Sending..." : "Send"}
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col">
+
+          {/* TO */}
+          <div className="px-6 py-4 border-b border-gray-800">
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              To
             </label>
 
-            {/* Email Tags */}
+            {/* Email Chips */}
             <div className="flex flex-wrap gap-2 mb-2">
               {emails?.map((email) => (
                 <span
@@ -123,11 +146,10 @@ export default function DashboardPage() {
                 type="email"
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="Enter email and click Add"
+                placeholder="Enter recipient email"
                 className="flex-1 rounded-md bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-gray-100
-      placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-
               <button
                 type="button"
                 onClick={addEmail}
@@ -138,69 +160,48 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+          {/* TEMPLATE */}
+          <div className="px-6 py-4 border-b border-gray-800">
+            <label className="block text-xs font-medium text-gray-400 mb-1">
               Template
             </label>
-
             <select
               value={selectedTemplate}
               onChange={handleTemplateChange}
               className="w-full rounded-md bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-gray-100
-               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select a template</option>
-
               {templates.map((template) => (
-                <option
-                  key={template._id}
-                  value={template._id}
-                  className="bg-gray-900"
-                >
+                <option key={template._id} value={template._id}>
                   {template.name}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Message */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+          {/* MESSAGE */}
+          <div className="px-6 py-4 flex-1">
+            {/* <label className="block text-xs font-medium text-gray-400 mb-2">
               Message
-            </label>
-            {/* <textarea
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            placeholder="Enter message"
-                            rows={4}
-                            // disabled={selectedTemplate}
-                            className="w-full rounded-md bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-gray-100
-                         placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        /> */}
-            {/* <TipTapEditor message={message} onChange={setMessage} />{" "} */}
-            <LexicalEditor
-              value={message}
-              onChange={(html) => setMessage(html)}
-              placeholder="Write your email here..."
-            />
+            </label> */}
+
+            <SimpleEditor value={message} onChange={setMessage} />
+            <div className="border border-gray-700 rounded-md overflow-hidden">
+              {/* <TiptapEditor value={message} onChange={setMessage} /> */}
+            </div>
           </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-blue-600 py-2 text-white font-medium
-                       hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Submitting..." : "Submit"}
-          </button>
+          {/* ACTIONS */}
+          <div className="px-6 py-4 border-t border-gray-800 flex items-center justify-between">
+            {success && (
+              <span className="text-sm text-green-400">{success}</span>
+            )}
+          </div>
 
-          {/* Success Message */}
-          {success && (
-            <p className="text-center text-sm text-green-400 mt-2">{success}</p>
-          )}
         </form>
       </div>
     </div>
+
   );
 }

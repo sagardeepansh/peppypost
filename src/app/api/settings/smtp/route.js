@@ -53,13 +53,12 @@ export async function GET(req) {
     await connectDB();
 
     const user = verifyApiAuth(req);
-    console.log('user', user)
 
     const data = await User.findOne({ _id: user.userId });
 
-    console.log('data', data)
+    // console.log('data', data)
 
-    return Response.json({ data: data }, { status: 200 });
+    return Response.json({ data: data?.smtp }, { status: 200 });
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });
   }

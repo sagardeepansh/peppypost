@@ -44,10 +44,10 @@ export default function DashboardLayout({ children }) {
             Settings
           </a>
           <a
-            href="/dashboard/log"
+            href="/dashboard/logs"
             className="block rounded px-3 py-2 text-sm hover:bg-gray-800"
           >
-            Settings
+            logs
           </a>
         </nav>
       </aside>
