@@ -1,6 +1,6 @@
 "use client";
 
-import TiptapEditor from "@/components/TiptapEditor";
+// import TiptapEditor from "@/components/TiptapEditor";
 import { useEffect, useState } from "react";
 import { SimpleEditor } from '@/components/tiptap-templates/simple/simple-editor'
 
@@ -96,8 +96,8 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-3xl bg-gray-900 border border-gray-800 rounded-xl shadow-xl">
+    <div className=" flex items-center justify-center p-0">
+      <div className="w-full shadow-xl">
 
         {/* Header */}
         <div className="px-6 flex justify-between items-center py-4 border-b border-gray-800">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import TiptapEditor from "@/components/TiptapEditor";
+// import TiptapEditor from "@/components/TiptapEditor";
 import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
 
 export default function EditTemplatePage() {
@@ -40,7 +40,7 @@ export default function EditTemplatePage() {
   };
 
   return (
-    <div className="max-w-xl">
+    <div className="">
       <h1 className="text-xl font-semibold mb-6">Edit Template</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">

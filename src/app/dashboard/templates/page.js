@@ -28,7 +28,7 @@ export default function TemplatesPage() {
 
 
     return (
-        <div className="min-h-screen">
+        <div className="">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-xl font-semibold">Templates</h1>
 

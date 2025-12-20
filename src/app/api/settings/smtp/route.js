@@ -54,7 +54,7 @@ export async function GET(req) {
 
     const user = verifyApiAuth(req);
 
-    const data = await User.findOne({ _id: user.userId });
+    const data = await User.findOne({ _id: user.userId }).select("+smtp.password");;
 
     // console.log('data', data)
 

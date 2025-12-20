@@ -4,6 +4,8 @@ import EmailQueue from "@/models/EmailQueue";
 import BulkEmailTask from "@/models/BulkEmailTask";
 import EmailLog from "@/models/EmailLog";
 import User from "@/models/User";
+import path from "path";
+import fs from "fs";
 
 export async function GET() {
   await connectDB();

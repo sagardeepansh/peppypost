@@ -24,7 +24,7 @@ export default function EmailLogsTable() {
 
   return (
     <>
-      <div className="overflow-x-auto border border-gray-800 rounded-lg">
+      <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-900 text-gray-300">
             <tr>
