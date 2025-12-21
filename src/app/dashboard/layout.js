@@ -111,7 +111,8 @@ export default function DashboardLayout({ children }) {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6">
+       <main className="flex-1 p-0 sm:p-6">
+
           <div className="rounded-xl border border-white/10 bg-gray-900/40 backdrop-blur-xl p-6 shadow-xl">
             {children}
           </div>
