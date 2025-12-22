@@ -40,15 +40,17 @@ export default function NewTemplatePage() {
                         body: data,
                     });
 
-                    const uploadResult = await uploadRes.json();
-
                     if (!uploadRes.ok) {
                         throw new Error("File upload failed");
                     }
 
-                    uploadedPaths.push(uploadResult.path);
+                    const uploadResult = await uploadRes.json();
+
+                    // Vercel Blob returns a public URL
+                    uploadedPaths.push(uploadResult.url);
                 }
             }
+
 
             // 2️⃣ Create template with uploaded file paths
             const res = await fetch("/api/templates", {

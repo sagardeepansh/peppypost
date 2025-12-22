@@ -42,6 +42,10 @@ body {
   min-height: 300px;
 
 }
+.tiptap.ProseMirror.simple-editor{
+  padding: 20px;
+  min-height: 200px;
+}
 @media (max-width: 480px) {
 .tiptap.ProseMirror.simple-editor{
   padding: 20px;
