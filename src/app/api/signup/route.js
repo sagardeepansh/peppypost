@@ -1,58 +1,64 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import User from "@/models/User";
+import Otp from "@/models/Otp";
 import { connectDB } from "@/lib/mongodb";
 
 export async function POST(req) {
   try {
     await connectDB();
 
-    const { email, password, name } = await req.json();
+    const { email, password, name, otp } = await req.json();
 
-    // 1️⃣ Basic validation
-    if (!email || !password) {
+    if (!email || !password || !otp) {
       return NextResponse.json(
-        { success: false, message: "Email and password are required" },
+        { message: "All fields required" },
         { status: 400 }
       );
     }
 
-    if (password.length < 6) {
+    const otpRecord = await Otp.findOne({ email });
+
+    if (!otpRecord || otpRecord.otp !== otp) {
       return NextResponse.json(
-        { success: false, message: "Password must be at least 6 characters" },
+        { message: "Invalid OTP" },
         { status: 400 }
       );
     }
 
-    // 2️⃣ Check if user already exists
+    if (otpRecord.expiresAt < new Date()) {
+      return NextResponse.json(
+        { message: "OTP expired" },
+        { status: 400 }
+      );
+    }
+
     const existingUser = await User.findOne({ email });
-
     if (existingUser) {
       return NextResponse.json(
-        { success: false, message: "User already exists" },
+        { message: "User already exists" },
         { status: 409 }
       );
     }
 
-    // 3️⃣ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4️⃣ Create user
     await User.create({
       email,
+      name,
       password: hashedPassword,
-      name
     });
- 
+
+    await Otp.deleteOne({ email });
+
     return NextResponse.json(
       { success: true, message: "Signup successful" },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Signup error:", error);
-
+    console.error(error);
     return NextResponse.json(
-      { success: false, message: "Server error" },
+      { message: "Server error" },
       { status: 500 }
     );
   }

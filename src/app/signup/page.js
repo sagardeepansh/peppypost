@@ -4,51 +4,63 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const router = useRouter();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const sendOtp = async () => {
     if (password !== confirmPassword) {
       alert("Passwords do not match");
       return;
     }
 
     setLoading(true);
+    const res = await fetch("/api/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    setLoading(false);
 
-    try {
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
-      });
+    if (res.ok) {
+      setOtpSent(true);
+      // alert("OTP sent to email");
+    } else {
+      alert("Failed to send OTP");
+    }
+  };
 
-      const data = await res.json();
-      setLoading(false);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-      if (!res.ok) {
-        alert(data.message || "Signup failed");
-        return;
-      }
+    const res = await fetch("/api/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password, otp }),
+    });
 
-      // Signup success → redirect to login
+    const data = await res.json()
+
+    setLoading(false);
+
+    if (res.ok) {
       router.push("/login");
-    } catch (err) {
-      setLoading(false);
-      alert("Something went wrong");
+    } else {
+      // console.log('res', data)
+      alert(data?.message);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
       <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl shadow-lg p-6">
-        
+
         {/* Header */}
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-semibold text-white">
@@ -61,20 +73,24 @@ export default function SignupPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Name
             </label>
             <input
-              type="name"
-              placeholder="Name :"
+              type="text"
+              placeholder="Your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
               className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-gray-100
-              placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Email
@@ -86,10 +102,11 @@ export default function SignupPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-gray-100
-              placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Password
@@ -101,10 +118,11 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-gray-100
-              placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
+          {/* Confirm Password */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Confirm Password
@@ -116,18 +134,49 @@ export default function SignupPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-gray-100
-              placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-2.5 text-white font-medium
-            hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Creating account..." : "Sign Up"}
-          </button>
+          {/* OTP FIELD (only after OTP sent) */}
+          {otpSent && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                OTP Code
+              </label>
+              <input
+                type="text"
+                placeholder="Enter 6-digit OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+                className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-gray-100
+            placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          {/* BUTTON */}
+          {!otpSent ? (
+            <button
+              type="button"
+              onClick={sendOtp}
+              disabled={loading}
+              className="w-full rounded-lg bg-blue-600 py-2.5 text-white font-medium
+          hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              {loading ? "Sending OTP..." : "Send OTP"}
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-green-600 py-2.5 text-white font-medium
+          hover:bg-green-700 transition disabled:opacity-50"
+            >
+              {loading ? "Verifying..." : "Verify & Sign Up"}
+            </button>
+          )}
         </form>
 
         {/* Footer */}
@@ -140,7 +189,9 @@ export default function SignupPage() {
             Sign in
           </span>
         </p>
+
       </div>
     </div>
+
   );
 }
