@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// import EmailBodyModal from "./EmailBodyModal"
+import { createPortal } from "react-dom";
 
 export default function EmailLogsTable() {
   const [logs, setLogs] = useState([]);
@@ -18,6 +18,19 @@ export default function EmailLogsTable() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [open]);
 
   if (loading) return <p>Loading logs...</p>;
   if (!logs.length) return <p>No email logs found.</p>;
@@ -44,21 +57,16 @@ export default function EmailLogsTable() {
                 className="border-t border-gray-800 hover:bg-gray-900"
               >
                 <td className="p-3">{formatDate(log.createdAt)}</td>
-
                 <td className="p-3">{log.to.join(", ")}</td>
-
                 <td className="p-3">{log.subject || "-"}</td>
-
                 <td className="p-3">
                   <StatusBadge status={log.status} />
                 </td>
-
                 <td className="p-3">{log.provider}</td>
-
                 <td className="p-3">
                   <button
                     onClick={() => {
-                      setSelectedLog(log);
+                      setSelectedLog(log?.body);
                       setOpen(true);
                     }}
                     className="text-blue-400 hover:underline"
@@ -66,9 +74,16 @@ export default function EmailLogsTable() {
                     View
                   </button>
                 </td>
-
                 <td className="p-3 text-red-400">
-                  {log.error || "-"}
+                  <button
+                    onClick={() => {
+                      setSelectedLog(log?.error || "No error found");
+                      setOpen(true);
+                    }}
+                    className="text-blue-400 hover:underline"
+                  >
+                    View Error
+                  </button>
                 </td>
               </tr>
             ))}
@@ -101,13 +116,10 @@ function formatDate(date) {
 
 function StatusBadge({ status }) {
   const isSent = status === "SENT";
-
   return (
     <span
       className={`px-2 py-1 rounded text-xs font-medium ${
-        isSent
-          ? "bg-green-900 text-green-300"
-          : "bg-red-900 text-red-300"
+        isSent ? "bg-green-900 text-green-300" : "bg-red-900 text-red-300"
       }`}
     >
       {status}
@@ -116,19 +128,30 @@ function StatusBadge({ status }) {
 }
 
 function EmailBodyModal({ log, onClose }) {
+  // Render nothing if no log data
   if (!log) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
-      <div className="bg-gray-900 w-full max-w-3xl rounded-lg border border-gray-800">
+  // Use React Portal to render modal at document.body
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="email-modal-title"
+    >
+      <div className="bg-gray-900 w-full max-w-3xl rounded-lg border border-gray-800 shadow-lg overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center px-4 py-3 border-b border-gray-800">
-          <h2 className="text-sm font-medium text-gray-200">
+          <h2
+            id="email-modal-title"
+            className="text-sm font-medium text-gray-200"
+          >
             Email Body
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white"
+            aria-label="Close email body modal"
+            className="text-gray-400 hover:text-white text-lg font-bold"
           >
             ✕
           </button>
@@ -136,16 +159,10 @@ function EmailBodyModal({ log, onClose }) {
 
         {/* Content */}
         <div className="p-4 max-h-[70vh] overflow-y-auto text-sm text-gray-300">
-          {log.body ? (
-            <div
-              className="prose prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: log.body }}
-            />
-          ) : (
-            <pre className="whitespace-pre-wrap">
-              {log.body || "No body available"}
-            </pre>
-          )}
+          <div
+            className="prose prose-invert max-w-none break-words"
+            dangerouslySetInnerHTML={{ __html: log }}
+          />
         </div>
 
         {/* Footer */}
@@ -158,6 +175,7 @@ function EmailBodyModal({ log, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
