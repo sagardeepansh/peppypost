@@ -39,26 +39,33 @@ export async function GET() {
       });
       const attachments = [];
 
-      if (Array.isArray(job.attachments)) {
-        for (const filePath of job.attachments) {
-          const absolutePath = path.join(process.cwd(), "public", filePath);
-          if (fs.existsSync(absolutePath)) {
-            attachments.push({
-              filename: path.basename(filePath),
-              path: absolutePath,
-            });
-          }
-        }
-      }
+      // if (Array.isArray(job.attachments)) {
+      //   for (const filePath of job.attachments) {
+      //     const absolutePath = path.join(process.cwd(), "public", filePath);
+      //     if (fs.existsSync(absolutePath)) {
+      //       attachments.push({
+      //         filename: path.basename(filePath),
+      //         path: absolutePath,
+      //       });
+      //     }
+      //   }
+      // }
 
       await transporter.sendMail({
         from: user.smtp.fromEmail,
         to: job.to,
         subject: job.subject,
         html: job.body,
-        attachments,
+        attachments:job.attachments[0],
       });
-     
+
+      // console.log("first", {
+      //   from: user.smtp.fromEmail,
+      //   to: job.to,
+      //   subject: job.subject,
+      //   html: job.body,
+      //   attachments:job.attachments[0],
+      // });
 
       await EmailQueue.findByIdAndUpdate(job._id, {
         status: "SENT",
