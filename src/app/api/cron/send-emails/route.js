@@ -1,17 +1,17 @@
 import nodemailer from "nodemailer";
+import axios from "axios";
 import { connectDB } from "@/lib/mongodb";
 import EmailQueue from "@/models/EmailQueue";
 import BulkEmailTask from "@/models/BulkEmailTask";
 import EmailLog from "@/models/EmailLog";
 import User from "@/models/User";
-import path from "path";
-import fs from "fs";
 
 export async function GET() {
   await connectDB();
 
   const BATCH_SIZE = 20;
   const MAX_RETRIES = 2;
+  const MAX_ATTACHMENT_MB = 20;
 
   const emails = await EmailQueue.find({
     status: "PENDING",
@@ -20,13 +20,15 @@ export async function GET() {
     .limit(BATCH_SIZE)
     .lean();
 
-  if (emails.length === 0) {
+  if (!emails.length) {
     return Response.json({ success: true, message: "No pending emails" });
   }
 
   for (const job of emails) {
     try {
+      // 1️⃣ Load user SMTP
       const user = await User.findById(job.user).select("+smtp.password");
+      if (!user?.smtp) throw new Error("SMTP not configured");
 
       const transporter = nodemailer.createTransport({
         host: user.smtp.host,
@@ -37,36 +39,48 @@ export async function GET() {
           pass: user.smtp.password,
         },
       });
-      const attachments = [];
 
-      // if (Array.isArray(job.attachments)) {
-      //   for (const filePath of job.attachments) {
-      //     const absolutePath = path.join(process.cwd(), "public", filePath);
-      //     if (fs.existsSync(absolutePath)) {
-      //       attachments.push({
-      //         filename: path.basename(filePath),
-      //         path: absolutePath,
-      //       });
-      //     }
-      //   }
-      // }
+      // 2️⃣ Build attachments (stream from URL)
+      let attachments = [];
 
+      if (Array.isArray(job.attachments) && job.attachments.length) {
+        attachments = await Promise.all(
+          job.attachments.map(async (fileUrl) => {
+            const res = await axios({
+              url: fileUrl,
+              method: "GET",
+              responseType: "stream",
+              timeout: 15000,
+            });
+
+            const size =
+              Number(res.headers["content-length"] || 0) /
+              (1024 * 1024);
+
+            if (size > MAX_ATTACHMENT_MB) {
+              throw new Error(
+                `Attachment exceeds ${MAX_ATTACHMENT_MB}MB limit`
+              );
+            }
+
+            return {
+              filename: fileUrl.split("/").pop(),
+              content: res.data, // STREAM
+            };
+          })
+        );
+      }
+
+      // 3️⃣ Send mail
       await transporter.sendMail({
         from: user.smtp.fromEmail,
         to: job.to,
         subject: job.subject,
         html: job.body,
-        attachments:job.attachments[0],
+        attachments,
       });
 
-      // console.log("first", {
-      //   from: user.smtp.fromEmail,
-      //   to: job.to,
-      //   subject: job.subject,
-      //   html: job.body,
-      //   attachments:job.attachments[0],
-      // });
-
+      // 4️⃣ Update queue + logs
       await EmailQueue.findByIdAndUpdate(job._id, {
         status: "SENT",
       });
@@ -85,6 +99,8 @@ export async function GET() {
         $set: { status: "PROCESSING", startedAt: new Date() },
       });
     } catch (err) {
+      console.error("Email failed:", err.message);
+
       await EmailQueue.findByIdAndUpdate(job._id, {
         status: "FAILED",
         retryCount: job.retryCount + 1,
@@ -107,10 +123,12 @@ export async function GET() {
     }
   }
 
-  // Complete finished tasks
+  // 5️⃣ Mark completed tasks
   await BulkEmailTask.updateMany(
     {
-      $expr: { $eq: ["$total", { $add: ["$sent", "$failed"] }] },
+      $expr: {
+        $eq: ["$total", { $add: ["$sent", "$failed"] }],
+      },
     },
     {
       status: "COMPLETED",
